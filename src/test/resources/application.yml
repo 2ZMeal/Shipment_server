@@ -1,0 +1,8 @@
+spring:
+  config:
+    import: ""       # 테스트 시 Config Server 연결 시도 방지
+  cloud:
+    config:
+      enabled: false
+  kafka:
+    bootstrap-servers: localhost:9092
