@@ -1,5 +1,6 @@
 package com.ezmeal.shipment.domain.entity;
 
+import com.ezmeal.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,7 +13,7 @@ import java.util.UUID;
 @Table(name = "p_shipment")
 @Getter
 @NoArgsConstructor
-public class Shipment {
+public class Shipment extends BaseEntity {
 
     @Id
     @UuidGenerator
@@ -44,25 +45,6 @@ public class Shipment {
     @Column(name = "canceled_at")
     private LocalDateTime canceledAt;
 
-    // Audit
-    @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "created_by", nullable = false, updatable = false)
-    private String createdBy;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
-
-    @Column(name = "updated_by")
-    private String updatedBy;
-
-    @Column(name = "deleted_at")
-    private LocalDateTime deletedAt;
-
-    @Column(name = "deleted_by")
-    private String deletedBy;
-
     // 팩토리 메서드 — Kafka order.delivering 이벤트로 배송 레코드 생성 시 사용
     public static Shipment create(UUID orderId, UUID userId, UUID companyId) {
         Shipment s = new Shipment();
@@ -70,8 +52,7 @@ public class Shipment {
         s.userId    = userId;
         s.companyId = companyId;
         s.status    = ShipmentStatus.PREPARING;
-        s.createdAt = LocalDateTime.now();
-        s.createdBy = "SYSTEM";
+        s.setSystemCreated();
         return s;
     }
 
@@ -83,7 +64,6 @@ public class Shipment {
         this.trackingNumber = trackingNumber;
         this.startedAt      = (startedAt != null) ? startedAt : LocalDateTime.now();
         this.status         = ShipmentStatus.IN_DELIVERY;
-        this.updatedAt      = LocalDateTime.now();
     }
 
     // 배송 완료: IN_DELIVERY → DELIVERED
@@ -93,7 +73,6 @@ public class Shipment {
         }
         this.deliveredAt = LocalDateTime.now();
         this.status      = ShipmentStatus.DELIVERED;
-        this.updatedAt   = LocalDateTime.now();
     }
 
     // 배송 취소: PREPARING → CANCELLED (IN_DELIVERY 이후는 불가)
@@ -104,6 +83,5 @@ public class Shipment {
         }
         this.canceledAt = LocalDateTime.now();
         this.status     = ShipmentStatus.CANCELLED;
-        this.updatedAt  = LocalDateTime.now();
     }
 }
