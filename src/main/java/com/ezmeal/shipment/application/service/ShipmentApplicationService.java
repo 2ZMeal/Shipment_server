@@ -1,6 +1,7 @@
 package com.ezmeal.shipment.application.service;
 
 import com.ezmeal.common.exception.types.BadRequestException;
+import com.ezmeal.common.exception.types.ForbiddenException;
 import com.ezmeal.common.exception.types.NotFoundException;
 import com.ezmeal.common.security.principal.CustomUserPrincipal;
 import com.ezmeal.shipment.application.dto.request.ShipmentStartRequest;
@@ -90,7 +91,11 @@ public class ShipmentApplicationService {
 
     private CustomUserPrincipal getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return (CustomUserPrincipal) auth.getPrincipal();
+        // principal 객체가 정의한 CustomUserPrincipal 의 타입이라면 principal이라는 변수명으로 저장
+        if (auth == null || !(auth.getPrincipal() instanceof CustomUserPrincipal principal)) {
+            throw new ForbiddenException(ShipmentErrorCode.ACCESS_DENIED);
+        }
+        return principal;
     }
 
     private Shipment findByOrderIdOrThrow(UUID orderId) {

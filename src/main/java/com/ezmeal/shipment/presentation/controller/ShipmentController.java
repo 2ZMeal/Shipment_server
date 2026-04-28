@@ -45,7 +45,7 @@ public class ShipmentController {
     }
 
     // API 스펙 원문: /api/v1/shipment/{orderId}/cancel (단수)
-    @PatchMapping("/api/v1/shipment/{orderId}/cancel")
+    @PatchMapping("/api/v1/shipments/{orderId}/cancel")
     public ResponseEntity<CommonApiResponse<ShipmentResponse>> cancelShipment(
         @PathVariable UUID orderId,
         @RequestHeader(value = "X-Company-Id", required = false) String companyId
