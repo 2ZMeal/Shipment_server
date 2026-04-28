@@ -108,7 +108,7 @@ class ShipmentControllerTest {
         given(shipmentApplicationService.cancelShipment(any(), any()))
             .willReturn(dummyResponse(ShipmentStatus.CANCELLED));
 
-        mockMvc.perform(patch("/api/v1/shipment/{orderId}/cancel", ORDER_ID)
+        mockMvc.perform(patch("/api/v1/shipments/{orderId}/cancel", ORDER_ID)
                 .with(csrf())
                 .header("X-Company-Id", COMPANY_ID))
             .andExpect(status().isOk())
