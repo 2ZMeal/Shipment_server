@@ -1,12 +1,13 @@
 package com.ezmeal.shipment.domain.exception;
 
+import com.ezmeal.common.exception.ErrorCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 
 @Getter
 @RequiredArgsConstructor
-public enum ShipmentErrorCode {
+public enum ShipmentErrorCode implements ErrorCode{
 
     SHIPMENT_NOT_FOUND("SHIPMENT_001", "해당 주문의 배송 정보를 찾을 수 없습니다.", HttpStatus.NOT_FOUND),
     NOT_PREPARING_STATUS("SHIPMENT_002", "배송 준비 상태(PREPARING)가 아닙니다.", HttpStatus.BAD_REQUEST),
@@ -17,5 +18,5 @@ public enum ShipmentErrorCode {
 
     private final String code;
     private final String message;
-    private final HttpStatus httpStatus;
+    private final HttpStatus status;
 }
