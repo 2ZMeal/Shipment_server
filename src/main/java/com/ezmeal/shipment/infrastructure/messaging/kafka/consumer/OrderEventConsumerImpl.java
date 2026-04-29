@@ -26,7 +26,7 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
      * OrderDelivering payload: orderId, userId, companyId, productId, deliveryAddress, status
      */
     @Override
-    @KafkaListener(topics = "order.delivering", groupId = "shipment-service")
+    @KafkaListener(topics = "order.delivering", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderDelivering(String message) {
         try {
             JsonNode node     = objectMapper.readTree(message);
@@ -55,7 +55,7 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
      * OrderCancelled payload: orderId, userId, productId, status
      */
     @Override
-    @KafkaListener(topics = "order.cancelled", groupId = "shipment-service")
+    @KafkaListener(topics = "order.cancelled", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderCancelled(String message) {
         try {
             JsonNode node  = objectMapper.readTree(message);
