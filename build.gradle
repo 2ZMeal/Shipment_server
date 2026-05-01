@@ -36,7 +36,7 @@ dependencyManagement {
 
 dependencies {
     // 1. common module
-    implementation 'com.ezmeal:common:0.0.1'
+    implementation 'com.ezmeal:common:0.0.4'
 
     // 2. Web & Validation
     implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -64,6 +64,7 @@ dependencies {
 
     // 7. Test
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
 }
 
 tasks.named('test') {
