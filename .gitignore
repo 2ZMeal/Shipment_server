@@ -1,56 +1,10 @@
-# ===========================
-# macOS
-# ===========================
-.DS_Store
-.AppleDouble
-.LSOverride
-
-# ===========================
-# IntelliJ IDEA / JetBrains
-# ===========================
-.idea/
-*.iml
-*.iws
-*.ipr
-out/
-
-# ===========================
-# Gradle
-# ===========================
-.gradle/
+HELP.md
+.gradle
 build/
 !gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
-
-# ===========================
-# Spring Boot
-# ===========================
-*.jar
-*.war
-*.ear
-
-# ===========================
-# Logs
-# ===========================
-*.log
-logs/
-
-# ===========================
-# Environment / Secrets
-# ===========================
-.env
-.env.*
-!.env.example
-
-# ===========================
-# VS Code
-# ===========================
-.vscode/
-
-# ===========================
-# Eclipse / STS
-# ===========================
+### STS ###
 .apt_generated
 .classpath
 .factorypath
@@ -61,13 +15,19 @@ logs/
 bin/
 !**/src/main/**/bin/
 !**/src/test/**/bin/
-
-# ===========================
-# NetBeans
-# ===========================
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /dist/
 /nbdist/
 /.nb-gradle/
-/docs
+### VS Code ###
+.vscode/
