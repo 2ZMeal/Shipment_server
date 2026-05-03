@@ -13,7 +13,6 @@ COPY build.gradle settings.gradle ./
 RUN chmod +x gradlew
 RUN ./gradlew dependencies --no-daemon || true
 COPY src/ src/
-RUN ./gradlew bootJar -x test --no-daemon
 
 # ---- Runtime Stage ----
 FROM eclipse-temurin:21-jre-alpine
