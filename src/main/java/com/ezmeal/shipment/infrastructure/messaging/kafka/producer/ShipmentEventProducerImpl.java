@@ -61,8 +61,9 @@ public class ShipmentEventProducerImpl implements ShipmentEventProducer {
     private void addSecurityHeaders(ProducerRecord<String, Object> record) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth != null && auth.getPrincipal() instanceof CustomUserPrincipal principal) {
-            record.headers().add("X-User-Id",   principal.getUserId().getBytes(StandardCharsets.UTF_8));
-            record.headers().add("X-User-Role", principal.getRole().name().getBytes(StandardCharsets.UTF_8));
+            record.headers().add("X-User-Id",    principal.getUserId().getBytes(StandardCharsets.UTF_8));
+            record.headers().add("X-User-Roles", principal.getRole().name().getBytes(StandardCharsets.UTF_8));
+            record.headers().add("X-User-Email", principal.getEmail().getBytes(StandardCharsets.UTF_8));
         }
     }
 }
