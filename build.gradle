@@ -26,17 +26,19 @@ repositories {
 
 ext {
     set('springCloudVersion', "2025.0.2")
+    set('datasourceMicrometerVersion', "1.4.1")
 }
 
 dependencyManagement {
     imports {
         mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+        mavenBom "net.ttddyy.observation:datasource-micrometer-bom:${datasourceMicrometerVersion}"
     }
 }
 
 dependencies {
     // 1. common module
-    implementation 'com.ezmeal:common:0.0.5'
+    implementation 'com.ezmeal:common:0.0.6'
 
     // 2. Web & Validation
     implementation 'org.springframework.boot:spring-boot-starter-web'
