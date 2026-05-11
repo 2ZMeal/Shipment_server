@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
@@ -28,8 +29,12 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
      * shipment.requested 수신 → Shipment 레코드 생성 (PREPARING 상태)
      * EventEnvelope 구조: { eventId, eventType, aggregateId, occurredAt, payload: { orderId, userId, companyId, ... } }
      */
-    @Override
     @KafkaListener(topics = "shipment.requested", groupId = "${spring.kafka.consumer.group-id}")
+    public void kafkaOnShipmentRequested(ConsumerRecord<String, String> record) {
+        onShipmentRequested(record.value());
+    }
+
+    @Override
     public void onShipmentRequested(String message) {
         try {
             JsonNode envelope = objectMapper.readTree(message);
@@ -52,8 +57,12 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
     /**
      * order.cancelled 수신 → PREPARING 상태이면 CANCELLED 로 변경
      */
-    @Override
     @KafkaListener(topics = "order.cancelled", groupId = "${spring.kafka.consumer.group-id}")
+    public void kafkaOnOrderCancelled(ConsumerRecord<String, String> record) {
+        onOrderCancelled(record.value());
+    }
+
+    @Override
     public void onOrderCancelled(String message) {
         try {
             JsonNode envelope = objectMapper.readTree(message);
