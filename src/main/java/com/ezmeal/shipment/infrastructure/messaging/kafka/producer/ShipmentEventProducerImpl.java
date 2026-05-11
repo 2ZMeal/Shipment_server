@@ -34,12 +34,7 @@ public class ShipmentEventProducerImpl implements ShipmentEventProducer {
                 shipment.getTrackingNumber(),
                 shipment.getStartedAt()
         );
-        ProducerRecord<String, Object> record = new ProducerRecord<>(
-                TOPIC_STARTED, shipment.getOrderId().toString(), payload
-        );
-        addSecurityHeaders(record);
-        kafkaTemplate.send(record);
-        log.info("[Kafka] shipment.started 발행 완료: orderId={}", shipment.getOrderId());
+        send(TOPIC_STARTED, shipment.getOrderId().toString(), payload);
     }
 
     @Override
@@ -50,12 +45,22 @@ public class ShipmentEventProducerImpl implements ShipmentEventProducer {
                 shipment.getUserId(),
                 shipment.getDeliveredAt()
         );
-        ProducerRecord<String, Object> record = new ProducerRecord<>(
-                TOPIC_DELIVERED, shipment.getOrderId().toString(), payload
-        );
+        send(TOPIC_DELIVERED, shipment.getOrderId().toString(), payload);
+    }
+
+    // ── private 타입 안전 send ────────────────────────────────────────────────
+    private void send(String topic, String key, ShipmentStartedPayload payload) {
+        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, key, payload);
         addSecurityHeaders(record);
         kafkaTemplate.send(record);
-        log.info("[Kafka] shipment.delivered 발행 완료: orderId={}", shipment.getOrderId());
+        log.info("[Kafka] {} 발행 완료: orderId={}", topic, key);
+    }
+
+    private void send(String topic, String key, ShipmentDeliveredPayload payload) {
+        ProducerRecord<String, Object> record = new ProducerRecord<>(topic, key, payload);
+        addSecurityHeaders(record);
+        kafkaTemplate.send(record);
+        log.info("[Kafka] {} 발행 완료: orderId={}", topic, key);
     }
 
     private void addSecurityHeaders(ProducerRecord<String, Object> record) {
