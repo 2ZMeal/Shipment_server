@@ -1,7 +1,10 @@
 package com.ezmeal.shipment.infrastructure.messaging.kafka.consumer;
 
+import com.ezmeal.common.message.inbox.InboxProcessor;
 import com.ezmeal.shipment.domain.entity.Shipment;
 import com.ezmeal.shipment.domain.event.OrderEventConsumer;
+import com.ezmeal.shipment.domain.event.payload.OrderCancelledPayload;
+import com.ezmeal.shipment.domain.event.payload.ShipmentRequestedPayload;
 import com.ezmeal.shipment.domain.repository.ShipmentRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,7 +13,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -18,57 +20,58 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class OrderEventConsumerImpl implements OrderEventConsumer {
 
+    private final InboxProcessor inboxProcessor;
     private final ShipmentRepository shipmentRepository;
     private final ObjectMapper objectMapper;
 
     /**
-     * order.delivering 수신 → Shipment 레코드 생성 (PREPARING 상태)
-     * OrderDelivering payload: orderId, userId, companyId, productId, deliveryAddress, status
+     * shipment.requested 수신 → Shipment 레코드 생성 (PREPARING 상태)
+     * EventEnvelope 구조: { eventId, eventType, aggregateId, occurredAt, payload: { orderId, userId, companyId, ... } }
      */
     @Override
-    @KafkaListener(topics = "order.delivering", groupId = "${spring.kafka.consumer.group-id}")
-    public void onOrderDelivering(String message) {
+    @KafkaListener(topics = "shipment.requested", groupId = "${spring.kafka.consumer.group-id}")
+    public void onShipmentRequested(String message) {
         try {
-            JsonNode node     = objectMapper.readTree(message);
-            UUID orderId   = UUID.fromString(node.get("orderId").asText());
-            UUID userId    = UUID.fromString(node.get("userId").asText());
-            UUID companyId = UUID.fromString(node.get("companyId").asText());
+            JsonNode envelope = objectMapper.readTree(message);
+            String eventId   = envelope.get("eventId").asText();
+            JsonNode payload = envelope.get("payload");
 
-            // 멱등성: 이미 레코드가 있으면 무시
-            Optional<Shipment> existing = shipmentRepository.findByOrderId(orderId);
-            if (existing.isPresent()) {
-                log.warn("[Kafka] order.delivering 중복 수신 무시: orderId={}", orderId);
-                return;
-            }
+            ShipmentRequestedPayload dto = objectMapper.treeToValue(payload, ShipmentRequestedPayload.class);
 
-            Shipment shipment = Shipment.create(orderId, userId, companyId);
-            shipmentRepository.save(shipment);
-            log.info("[Kafka] Shipment 레코드 생성 완료: orderId={}", orderId);
+            inboxProcessor.processOnce(eventId, () -> {
+                Shipment shipment = Shipment.create(dto.orderId(), dto.userId(), dto.companyId());
+                shipmentRepository.save(shipment);
+                log.info("[Kafka] Shipment 레코드 생성 완료: orderId={}", dto.orderId());
+            });
 
         } catch (Exception e) {
-            log.error("[Kafka] order.delivering 처리 실패: {}", e.getMessage(), e);
+            log.error("[Kafka] shipment.requested 처리 실패: {}", e.getMessage(), e);
         }
     }
 
     /**
      * order.cancelled 수신 → PREPARING 상태이면 CANCELLED 로 변경
-     * OrderCancelled payload: orderId, userId, productId, status
      */
     @Override
     @KafkaListener(topics = "order.cancelled", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderCancelled(String message) {
         try {
-            JsonNode node  = objectMapper.readTree(message);
-            UUID orderId = UUID.fromString(node.get("orderId").asText());
+            JsonNode envelope = objectMapper.readTree(message);
+            String eventId   = envelope.get("eventId").asText();
+            JsonNode payload = envelope.get("payload");
 
-            shipmentRepository.findByOrderId(orderId).ifPresent(shipment -> {
-                try {
-                    shipment.cancel();
-                    shipmentRepository.save(shipment);
-                    log.info("[Kafka] Shipment 취소 처리 완료: orderId={}", orderId);
-                } catch (IllegalStateException e) {
-                    log.warn("[Kafka] Shipment 취소 불가 (이미 배송 시작): orderId={}", orderId);
-                }
+            OrderCancelledPayload dto = objectMapper.treeToValue(payload, OrderCancelledPayload.class);
+
+            inboxProcessor.processOnce(eventId, () -> {
+                shipmentRepository.findByOrderId(dto.orderId()).ifPresent(shipment -> {
+                    try {
+                        shipment.cancel();
+                        shipmentRepository.save(shipment);
+                        log.info("[Kafka] Shipment 취소 처리 완료: orderId={}", dto.orderId());
+                    } catch (IllegalStateException e) {
+                        log.warn("[Kafka] Shipment 취소 불가 (이미 배송 시작): orderId={}", dto.orderId());
+                    }
+                });
             });
 
         } catch (Exception e) {
