@@ -10,3 +10,6 @@ spring:
       retry:
         max-attempts: 3
         initial-interval: 1000
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
