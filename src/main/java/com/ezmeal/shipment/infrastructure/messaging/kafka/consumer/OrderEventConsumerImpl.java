@@ -23,7 +23,7 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
     /**
      * shipment.requested 수신 → Shipment 레코드 생성 (PREPARING 상태)
      */
-    @KafkaListener(topics = "shipment.requested", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = "order.shipment.requested", groupId = "${spring.kafka.consumer.group-id}")
     public void onShipmentRequested(EventEnvelope<ShipmentRequestedPayload> envelope) {
         inboxProcessor.processOnce(envelope.eventId(), () -> {
             ShipmentRequestedPayload payload = envelope.payload();
