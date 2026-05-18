@@ -1,5 +1,6 @@
 package com.ezmeal.shipment.application.service;
 
+import com.ezmeal.common.enums.Role;
 import com.ezmeal.common.exception.types.BadRequestException;
 import com.ezmeal.common.exception.types.ForbiddenException;
 import com.ezmeal.common.exception.types.NotFoundException;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -26,19 +28,38 @@ public class ShipmentApplicationService {
     private final ShipmentRepository shipmentRepository;
     private final ShipmentEventProducer shipmentEventProducer;
 
+    // orderId 기준 전체 조회 - 업체별로 Shipment가 N개일 수 있음
     @Transactional(readOnly = true)
-    public ShipmentResponse getShipment(UUID orderId, String requestCompanyId) {
+    public List<ShipmentResponse> getShipmentsByOrderId(UUID orderId, String requestCompanyId) {
         CustomUserPrincipal principal = getCurrentUser();
-        Shipment shipment = findByOrderIdOrThrow(orderId);
-        UserRoleCheck.checkReadPermission(principal.getRole(), principal.getUserId(), requestCompanyId, shipment);
-        return ShipmentResponse.from(shipment);
+        List<Shipment> shipments = shipmentRepository.findAllByOrderId(orderId);
+        if (shipments.isEmpty()) {
+            throw new NotFoundException(ShipmentErrorCode.SHIPMENT_NOT_FOUND);
+        }
+
+        Role role = principal.getRole();
+        if (role == Role.ADMIN) {
+            return shipments.stream().map(ShipmentResponse::from).toList();
+        }
+        if (role == Role.USER) {
+            UserRoleCheck.checkReadPermission(role, principal.getUserId(), requestCompanyId, shipments.get(0));
+            return shipments.stream().map(ShipmentResponse::from).toList();
+        }
+        if (role == Role.COMPANY) {
+            UUID companyId = UUID.fromString(requestCompanyId);
+            return shipments.stream()
+                    .filter(s -> s.getCompanyId().equals(companyId))
+                    .map(ShipmentResponse::from)
+                    .toList();
+        }
+        throw new ForbiddenException(ShipmentErrorCode.ACCESS_DENIED);
     }
 
     @Transactional
-    public ShipmentResponse startShipment(UUID orderId, ShipmentStartRequest request,
+    public ShipmentResponse startShipment(UUID shipmentId, ShipmentStartRequest request,
                                           String requestCompanyId) {
         CustomUserPrincipal principal = getCurrentUser();
-        Shipment shipment = findByOrderIdOrThrow(orderId);
+        Shipment shipment = findByShipmentIdOrThrow(shipmentId);
         UserRoleCheck.checkVendorOrMasterPermission(principal.getRole(), requestCompanyId, shipment);
 
         if (request.trackingNumber() == null || request.trackingNumber().isBlank()) {
@@ -57,9 +78,9 @@ public class ShipmentApplicationService {
     }
 
     @Transactional
-    public ShipmentResponse deliverShipment(UUID orderId, String requestCompanyId) {
+    public ShipmentResponse deliverShipment(UUID shipmentId, String requestCompanyId) {
         CustomUserPrincipal principal = getCurrentUser();
-        Shipment shipment = findByOrderIdOrThrow(orderId);
+        Shipment shipment = findByShipmentIdOrThrow(shipmentId);
         UserRoleCheck.checkVendorOrMasterPermission(principal.getRole(), requestCompanyId, shipment);
 
         try {
@@ -74,9 +95,9 @@ public class ShipmentApplicationService {
     }
 
     @Transactional
-    public ShipmentResponse cancelShipment(UUID orderId, String requestCompanyId) {
+    public ShipmentResponse cancelShipment(UUID shipmentId, String requestCompanyId) {
         CustomUserPrincipal principal = getCurrentUser();
-        Shipment shipment = findByOrderIdOrThrow(orderId);
+        Shipment shipment = findByShipmentIdOrThrow(shipmentId);
         UserRoleCheck.checkVendorOrMasterPermission(principal.getRole(), requestCompanyId, shipment);
 
         try {
@@ -91,15 +112,14 @@ public class ShipmentApplicationService {
 
     private CustomUserPrincipal getCurrentUser() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        // principal 객체가 정의한 CustomUserPrincipal 의 타입이라면 principal이라는 변수명으로 저장
         if (auth == null || !(auth.getPrincipal() instanceof CustomUserPrincipal principal)) {
             throw new ForbiddenException(ShipmentErrorCode.ACCESS_DENIED);
         }
         return principal;
     }
 
-    private Shipment findByOrderIdOrThrow(UUID orderId) {
-        return shipmentRepository.findByOrderId(orderId)
-            .orElseThrow(() -> new NotFoundException(ShipmentErrorCode.SHIPMENT_NOT_FOUND));
+    private Shipment findByShipmentIdOrThrow(UUID shipmentId) {
+        return shipmentRepository.findById(shipmentId)
+                .orElseThrow(() -> new NotFoundException(ShipmentErrorCode.SHIPMENT_NOT_FOUND));
     }
 }

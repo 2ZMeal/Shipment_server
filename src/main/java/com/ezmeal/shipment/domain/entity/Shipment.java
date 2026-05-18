@@ -20,7 +20,7 @@ public class Shipment extends BaseEntity {
     @Column(columnDefinition = "uuid")
     private UUID id;
 
-    @Column(name = "order_id", nullable = false, unique = true, columnDefinition = "uuid")
+    @Column(name = "order_id", nullable = false, columnDefinition = "uuid")
     private UUID orderId;
 
     @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
