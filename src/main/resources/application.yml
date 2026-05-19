@@ -5,8 +5,11 @@ spring:
     import: "configserver:"      # Config Server에서 설정 가져옴
   cloud:
     config:
-      uri: http://config-server:8888
+      uri: ${CONFIG_SERVER_URI:http://localhost:8888}
       fail-fast: false
       retry:
         max-attempts: 3
         initial-interval: 1000
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
