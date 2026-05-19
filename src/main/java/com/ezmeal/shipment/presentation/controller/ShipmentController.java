@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -16,41 +17,44 @@ public class ShipmentController {
 
     private final ShipmentApplicationService shipmentApplicationService;
 
+    // orderId 기준 조회 → 업체별 Shipment 목록 반환
     @GetMapping("/api/v1/shipments/{orderId}")
-    public ResponseEntity<CommonApiResponse<ShipmentResponse>> getShipment(
+    public ResponseEntity<CommonApiResponse<List<ShipmentResponse>>> getShipment(
         @PathVariable UUID orderId,
         @RequestHeader(value = "X-Company-Id", required = false) String companyId
     ) {
-        ShipmentResponse data = shipmentApplicationService.getShipment(orderId, companyId);
+        List<ShipmentResponse> data = shipmentApplicationService.getShipmentsByOrderId(orderId, companyId);
         return ResponseEntity.ok(CommonApiResponse.success("배송 상태 조회 성공", data));
     }
 
-    @PatchMapping("/api/v1/shipments/{orderId}/start")
+    // 특정 Shipment 배송 시작 (shipmentId 기준)
+    @PatchMapping("/api/v1/shipments/{shipmentId}/start")
     public ResponseEntity<CommonApiResponse<ShipmentResponse>> startShipment(
-        @PathVariable UUID orderId,
+        @PathVariable UUID shipmentId,
         @RequestBody ShipmentStartRequest request,
         @RequestHeader(value = "X-Company-Id", required = false) String companyId
     ) {
-        ShipmentResponse data = shipmentApplicationService.startShipment(orderId, request, companyId);
+        ShipmentResponse data = shipmentApplicationService.startShipment(shipmentId, request, companyId);
         return ResponseEntity.ok(CommonApiResponse.success("배송이 시작되었습니다.", data));
     }
 
-    @PatchMapping("/api/v1/shipments/{orderId}/delivered")
+    // 특정 Shipment 배송 완료 (shipmentId 기준)
+    @PatchMapping("/api/v1/shipments/{shipmentId}/delivered")
     public ResponseEntity<CommonApiResponse<ShipmentResponse>> deliverShipment(
-        @PathVariable UUID orderId,
+        @PathVariable UUID shipmentId,
         @RequestHeader(value = "X-Company-Id", required = false) String companyId
     ) {
-        ShipmentResponse data = shipmentApplicationService.deliverShipment(orderId, companyId);
+        ShipmentResponse data = shipmentApplicationService.deliverShipment(shipmentId, companyId);
         return ResponseEntity.ok(CommonApiResponse.success("배송이 완료되었습니다.", data));
     }
 
-    // API 스펙 원문: /api/v1/shipment/{orderId}/cancel (단수)
-    @PatchMapping("/api/v1/shipments/{orderId}/cancel")
+    // 특정 Shipment 배송 취소 (shipmentId 기준)
+    @PatchMapping("/api/v1/shipments/{shipmentId}/cancel")
     public ResponseEntity<CommonApiResponse<ShipmentResponse>> cancelShipment(
-        @PathVariable UUID orderId,
+        @PathVariable UUID shipmentId,
         @RequestHeader(value = "X-Company-Id", required = false) String companyId
     ) {
-        ShipmentResponse data = shipmentApplicationService.cancelShipment(orderId, companyId);
+        ShipmentResponse data = shipmentApplicationService.cancelShipment(shipmentId, companyId);
         return ResponseEntity.ok(CommonApiResponse.success("배송이 취소되었습니다.", data));
     }
 }

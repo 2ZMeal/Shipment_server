@@ -34,19 +34,19 @@ public class OrderEventConsumerImpl implements OrderEventConsumer {
     }
 
     /**
-     * order.cancelled 수신 → PREPARING 상태이면 CANCELLED 로 변경
+     * order.cancelled 수신 → PREPARING 상태인 모든 Shipment를 CANCELLED 로 변경
      */
     @KafkaListener(topics = "order.cancelled", groupId = "${spring.kafka.consumer.group-id}")
     public void onOrderCancelled(EventEnvelope<OrderCancelledPayload> envelope) {
         inboxProcessor.processOnce(envelope.eventId(), () -> {
             OrderCancelledPayload payload = envelope.payload();
-            shipmentRepository.findByOrderId(payload.orderId()).ifPresent(shipment -> {
+            shipmentRepository.findAllByOrderId(payload.orderId()).forEach(shipment -> {
                 try {
                     shipment.cancel();
                     shipmentRepository.save(shipment);
-                    log.info("[Kafka] Shipment 취소 처리 완료: orderId={}", payload.orderId());
+                    log.info("[Kafka] Shipment 취소 처리 완료: orderId={}, shipmentId={}", payload.orderId(), shipment.getId());
                 } catch (IllegalStateException e) {
-                    log.warn("[Kafka] Shipment 취소 불가 (이미 배송 시작): orderId={}", payload.orderId());
+                    log.warn("[Kafka] Shipment 취소 불가 (이미 배송 시작): orderId={}, shipmentId={}", payload.orderId(), shipment.getId());
                 }
             });
         });
